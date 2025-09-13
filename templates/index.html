@@ -2,40 +2,178 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Coffee Shop</title>
+  <title>☕ Coffee Shop</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; padding: 1rem; max-width:800px; margin:auto; }
-    .menu-item { border-bottom:1px solid #ddd; padding:8px 0; }
-    button { padding:6px 10px; margin-left:10px; }
+    /* ===== Global styles ===== */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f3ef;
+      color: #3e2723;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: linear-gradient(135deg, #6d4c41, #3e2723);
+      color: #fff;
+      padding: 1rem 2rem;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* ===== Menu styles ===== */
+    #menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .menu-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .menu-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+
+    .menu-item h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.2rem;
+    }
+
+    .menu-item p {
+      margin: 0 0 0.75rem;
+      color: #5d4037;
+      font-size: 0.9rem;
+    }
+
+    .menu-item .price {
+      font-weight: bold;
+      color: #4e342e;
+    }
+
+    .menu-item label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+
+    /* ===== Order form ===== */
+    .order-form {
+      margin-top: 2rem;
+      background: #fff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .order-form h2 {
+      margin-top: 0;
+    }
+
+    input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 60%;
+    }
+
+    button {
+      background: #6d4c41;
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #3e2723;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      input[type="text"] {
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>☕ Coffee Shop</h1>
-  <div id="menu"></div>
+  <header>
+    <h1>☕ Welcome to Coffee Shop</h1>
+    <p>Freshly brewed happiness, just for you</p>
+  </header>
 
-  <h2>Place Order</h2>
-  <label>Your name: <input id="customer" /></label>
-  <button id="place">Place Order for selected items</button>
+  <div class="container">
+    <h2>Our Menu</h2>
+    <div id="menu"></div>
+
+    <div class="order-form">
+      <h2>Place Your Order</h2>
+      <label>
+        Your Name:
+        <input id="customer" type="text" placeholder="e.g. John Doe" />
+      </label>
+      <br/><br/>
+      <button id="place">Order Selected Items</button>
+    </div>
+  </div>
 
   <script>
     let selected = new Set();
+
     async function loadMenu() {
       const res = await fetch('/api/menu');
       const items = await res.json();
       const menuDiv = document.getElementById('menu');
       menuDiv.innerHTML = '';
+
       items.forEach(it => {
         const div = document.createElement('div');
         div.className = 'menu-item';
-        div.innerHTML = `<strong>${it.name}</strong> - $${it.price.toFixed(2)} <br/><small>${it.description}</small>`;
+        div.innerHTML = `
+          <h3>${it.name}</h3>
+          <p>${it.description}</p>
+          <div class="price">$${it.price.toFixed(2)}</div>
+        `;
+
+        const label = document.createElement('label');
         const cb = document.createElement('input');
         cb.type = 'checkbox';
-        cb.style.marginRight = '8px';
         cb.onchange = (e) => {
-          if (e.target.checked) selected.add(it.id); else selected.delete(it.id);
+          if (e.target.checked) selected.add(it.id);
+          else selected.delete(it.id);
         };
-        div.prepend(cb);
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(" Add to order"));
+
+        div.appendChild(label);
         menuDiv.appendChild(div);
       });
     }
@@ -50,9 +188,9 @@
         body: JSON.stringify({items, customer})
       });
       if (res.status === 201) {
-        alert('Order placed!');
+        alert('✅ Order placed successfully!');
         selected.clear();
-        loadMenu();
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
       } else {
         const err = await res.json();
         alert('Error: ' + (err.error || 'unknown'));
