@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+#Create a application directory
+WORKDIR /app
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements for Caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code
+COPY . .
+
+# Create writable dir for sqlite
+RUN mkdir -p /data && chown -R nobody:nogroup /data
+ENV DATABASE_URL=sqlite:////data/coffee_shop.db
+ENV PORT=8000
+
+# Expose the port
+EXPOSE 8000
+
+# Run the application with gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app", "--workers", "3", "--threads", "2"]
